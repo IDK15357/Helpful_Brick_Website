@@ -22,6 +22,186 @@
             </li>
           </ul>
         </div>
-      </nav> 
+      </nav>
+      <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .item { margin-bottom: 15px; }
+    .cart-item { display: flex; align-items: center; margin-bottom: 8px; }
+    .cart-item span { margin: 0 10px; }
+    .cart-item input { width: 50px; text-align: center; }
+    .purchase-history { margin-top: 30px; }
+  </style>
+</head>
+<body>
+    <h1>Store</h1>
+     <div class="section" id="store">
+    <h2>Items for Sale</h2>
+
+    <div class="item">
+      <span>Bundle1 - $4.99</span>
+      <input type="number" id="qty-bundle1" value="1" min="1">
+      <button onclick="addToCart('Bundle1', 4.99, 'qty-bundle1')">Add to Cart</button>
+    </div>
+
+    <div class="item">
+      <span>Bundle2 - $9.99</span>
+      <input type="number" id="qty-bundle2" value="1" min="1">
+      <button onclick="addToCart('Bundle2', 9.99, 'qty-bundle2')">Add to Cart</button>
+    </div>
+  </div>
+
+  <!-- Cart Section -->
+  <div class="section" id="cart">
+    <h2>Cart</h2>
+    <div id="cart-items"></div>
+    <p><strong>Total: $<span id="total">0.00</span></strong></p>
+    <button onclick="showShippingForm()">Checkout</button>
+  </div>
+
+  <!-- Shipping Form -->
+  <div class="section hidden" id="shipping-form">
+    <h2>Shipping Information</h2>
+    <label>Address: <input type="text" id="address"></label><br><br>
+    <button onclick="showPaymentOptions()">Next</button>
+  </div>
+
+  <!-- Payment Options -->
+  <div class="section hidden" id="payment-methods">
+    <h2>Payment Method</h2>
+    <button onclick="selectPayment('Debit/Credit')">Debit/Credit</button>
+    <button onclick="selectPayment('Cash')">Cash</button>
+
+    <div id="card-details" class="hidden">
+      <label>Card Number: <input type="text" id="card-number"></label><br><br>
+      <label>Expiry Date: <input type="text" id="card-expiry"></label><br><br>
+    </div>
+   
+    <button onclick="completePurchase()">Complete Purchase</button>
+  </div>
+
+  <!-- Confirmation -->
+  <div class="section hidden" id="confirmation">
+    <h2>Thank you for your purchase!</h2>
+    <p id="confirmation-details"></p>
+  </div>
+
+  <script>
+    let cart = {};
+    let total = 0;
+    let shippingCompleted = false;
+    let selectedPayment = "";
+
+    function addToCart(name, price, qtyInputId) {
+      const quantity = parseInt(document.getElementById(qtyInputId).value);
+      if (!cart[name]) {
+        cart[name] = { price: price, quantity: 0 };
+      }
+      cart[name].quantity += quantity;
+      updateCart();
+    }
+
+    function updateCart() {
+      const cartItemsDiv = document.getElementById("cart-items");
+      cartItemsDiv.innerHTML = "";
+      total = 0;
+
+      for (const item in cart) {
+        const { price, quantity } = cart[item];
+        total += price * quantity;
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <span>${item} - $${price.toFixed(2)} x ${quantity}</span>
+          <input type="number" min="1" value="${quantity}" onchange="updateQuantity('${item}', this.value)">
+          <button onclick="removeItem('${item}')">Remove</button>
+        `;
+        cartItemsDiv.appendChild(div);
+      }
+
+      document.getElementById("total").innerText = total.toFixed(2);
+    }
+
+    function updateQuantity(item, newQty) {
+      const quantity = parseInt(newQty);
+      if (quantity < 1) return;
+      cart[item].quantity = quantity;
+      updateCart();
+    }
+
+    function removeItem(item) {
+      delete cart[item];
+      updateCart();
+    }
+
+    function showShippingForm() {
+      if (Object.keys(cart).length === 0) {
+        alert("Your cart is empty.");
+        return;
+      }
+      document.getElementById("cart").classList.add("hidden");
+      document.getElementById("shipping-form").classList.remove("hidden");
+    }
+
+    function showPaymentOptions() {
+      const address = document.getElementById("address").value.trim();
+      if (!address) {
+        alert("Please enter a valid shipping address.");
+        return;
+      }
+      shippingCompleted = true;
+      document.getElementById("shipping-form").classList.add("hidden");
+      document.getElementById("payment-methods").classList.remove("hidden");
+    }
+
+    function selectPayment(method) {
+      selectedPayment = method;
+      document.getElementById("card-details").classList.toggle("hidden", method !== "Debit/Credit");
+    }
+
+    function completePurchase() {
+      if (!shippingCompleted) {
+        alert("Please complete the shipping information first.");
+        return;
+      }
+
+      const address = document.getElementById("address").value.trim();
+      if (!address) {
+        alert("Shipping address is required.");
+        return;
+      }
+
+      if (!selectedPayment) {
+        alert("Please select a payment method.");
+        return;
+      }
+
+      if (selectedPayment === "Debit/Credit") {
+        const cardNumber = document.getElementById("card-number").value.trim();
+        const cardExpiry = document.getElementById("card-expiry").value.trim();
+        if (!cardNumber || !cardExpiry) {
+          alert("Please enter your card number and expiry date.");
+          return;
+        }
+      }
+
+      // Display confirmation
+      document.getElementById("payment-methods").classList.add("hidden");
+      document.getElementById("confirmation").classList.remove("hidden");
+
+      const summary = `Shipping to: ${address}<br>Payment: ${selectedPayment}<br>Total Paid: $${total.toFixed(2)}`;
+      document.getElementById("confirmation-details").innerHTML = summary;
+
+      // Reset everything
+      cart = {};
+      total = 0;
+      updateCart();
+      shippingCompleted = false;
+      selectedPayment = "";
+      document.getElementById("address").value = "";
+      document.getElementById("card-number").value = "";
+      document.getElementById("card-expiry").value = "";
+    }
+  </script>
+
 </body>
 </html>
