@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Checkout</title>
+  <style>
+    body { font-family: Arial; max-width: 700px; margin: auto; padding: 20px; }
+    .section { margin-top: 30px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>Checkout</h1>
+
+  <div id="cart-section">
+    <h2>Cart Summary</h2>
+    <div id="cart-items"></div>
+    <p><strong>Total: $<span id="total">0.00</span></strong></p>
+  </div>
+
+  <div class="section" id="shipping-form">
+    <h2>Shipping Info</h2>
+    <label>Address: <input type="text" id="address"></label><br><br>
+    <button onclick="showPaymentOptions()">Next</button>
+  </div>
+
+  <div class="section hidden" id="payment-methods">
+    <h2>Payment Method</h2>
+    <button onclick="selectPayment('Debit/Credit')">Debit/Credit</button>
+    <button onclick="selectPayment('Cash')">Cash</button>
+
+    <div id="card-details" class="hidden">
+      <label>Card Number: <input type="text" id="card-number"></label><br><br>
+      <label>Expiry Date: <input type="text" id="card-expiry"></label><br><br>
+    </div>
+
+    <button onclick="completePurchase()">Complete Purchase</button>
+  </div>
+
+  <div class="section hidden" id="confirmation">
+    <h2>Thank you for your purchase!</h2>
+    <p id="confirmation-details"></p>
+    <br>
+    <a href="index.html">Return To Home</a>
+  </div>
+
+  <script>
+    let cart = JSON.parse(localStorage.getItem("cart")) || {};
+    let total = 0;
+    let shippingCompleted = false;
+    let selectedPayment = "";
+
+    function loadCart() {
+      const cartItemsDiv = document.getElementById("cart-items");
+      cartItemsDiv.innerHTML = "";
+      total = 0;
+
+      for (const item in cart) {
+        const { price, quantity } = cart[item];
+        total += price * quantity;
+        const div = document.createElement("div");
+        div.innerText = `${item} - $${price.toFixed(2)} x ${quantity}`;
+        cartItemsDiv.appendChild(div);
+      }
+
+      document.getElementById("total").innerText = total.toFixed(2);
+    }
+
+    function showPaymentOptions() {
+      const address = document.getElementById("address").value.trim();
+      if (!address) {
+        alert("Please enter your shipping address.");
+        return;
+      }
+      shippingCompleted = true;
+      document.getElementById("shipping-form").classList.add("hidden");
+      document.getElementById("payment-methods").classList.remove("hidden");
+    }
+
+    function selectPayment(method) {
+      selectedPayment = method;
+      document.getElementById("card-details").classList.toggle("hidden", method !== "Debit/Credit");
+    }
+
+    function completePurchase() {
+      if (!shippingCompleted) {
+        alert("Please complete the shipping form first.");
+        return;
+      }
+
+      const address = document.getElementById("address").value.trim();
+      if (!address) {
+        alert("Shipping address is required.");
+        return;
+      }
+
+      if (!selectedPayment) {
+        alert("Please select a payment method.");
+        return;
+      }
+
+      if (selectedPayment === "Debit/Credit") {
+        const cardNumber = document.getElementById("card-number").value.trim();
+        const cardExpiry = document.getElementById("card-expiry").value.trim();
+        if (!cardNumber || !cardExpiry) {
+          alert("Please enter your card number and expiry.");
+          return;
+        }
+      }
+
+      // Show confirmation on the page (not with alert)
+      document.getElementById("payment-methods").classList.add("hidden");
+      document.getElementById("confirmation").classList.remove("hidden");
+
+      const summary = `Shipping to: ${address}<br>Payment Method: ${selectedPayment}<br>Total Paid: $${total.toFixed(2)}`;
+      document.getElementById("confirmation-details").innerHTML = summary;
+
+      // Reset cart and data
+      localStorage.removeItem("cart");
+    }
+
+    window.onload = loadCart;
+  </script>
+</body>
+</html>
